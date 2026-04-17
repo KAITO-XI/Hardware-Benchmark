@@ -1,0 +1,21 @@
+{
+  "sources": [
+    {
+      "id": "passmark_cpu_list",
+      "enabled": true,
+      "type": "passmark_cpu_list",
+      "url": "https://www.cpubenchmark.net/cpu-list/all"
+    },
+    {
+      "id": "passmark_gpu_list",
+      "enabled": true,
+      "type": "passmark_gpu_list",
+      "url": "https://www.videocardbenchmark.net/gpu_list.php"
+    }
+  ],
+  "defaults": {
+    "cpuSingleBaseModelHints": ["Core i7-8700"],
+    "cpuMultiBaseModelHints": ["Ryzen 5 3600"],
+    "gpuBaseModelHints": ["GeForce GTX 1060"]
+  }
+}
