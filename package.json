@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npx tsc -b && vite build",
     "preview": "vite preview",
     "data:update": "node ./scripts/data/update-hardware-data.mjs",
     "data:update:dry": "node ./scripts/data/update-hardware-data.mjs --dry-run"
