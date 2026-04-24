@@ -14,6 +14,23 @@ function getNextSlotLabel(count: number): string {
   return `设备 ${String.fromCharCode(65 + count)}`;
 }
 
+function formatUpdatedAt(value: string | undefined): string {
+  if (!value) {
+    return '--';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>('search');
   const [dataset, setDataset] = useState<OfflineDataset>();
@@ -119,7 +136,7 @@ export default function App() {
       <div className="app-shell">
         <header className="page-header">
           <div>
-            <div className="eyebrow">Offline Hardware Benchmark</div>
+            <div className="eyebrow">VCP Hardware Benchmark</div>
             <h1>CPU / GPU 性能比较工具</h1>
           </div>
         </header>
@@ -137,7 +154,7 @@ export default function App() {
       <div className="app-shell">
         <header className="page-header">
           <div>
-            <div className="eyebrow">Offline Hardware Benchmark</div>
+            <div className="eyebrow">VCP Hardware Benchmark</div>
             <h1>CPU / GPU 性能比较工具</h1>
           </div>
         </header>
@@ -154,7 +171,7 @@ export default function App() {
     <div className="app-shell">
       <header className="page-header">
         <div>
-          <div className="eyebrow">Offline Hardware Benchmark</div>
+          <div className="eyebrow">VCP Hardware Benchmark</div>
           <h1>CPU / GPU 性能比较工具</h1>
         </div>
       </header>
@@ -210,6 +227,56 @@ export default function App() {
           <GpuLadderCard rows={dataset.gpuLadder} highlightedIds={highlightedGpuIds} onPickGpu={pickGpuFromLadder} />
         ) : null}
       </main>
+
+      <section className="data-meta-card">
+        <div className="data-meta-item">
+          <div className="data-meta-label">数据库更新日期</div>
+          <div className="data-meta-value">{formatUpdatedAt(dataset.meta.updatedAt)}</div>
+        </div>
+        <div className="data-meta-item">
+          <div className="data-meta-label">数据源头</div>
+          <div className="data-source-list">
+            {dataset.meta.sources.length > 0
+              ? dataset.meta.sources.map((source) => (
+                  <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="data-source-link">
+                    {source.type}
+                  </a>
+                ))
+              : '--'}
+          </div>
+        </div>
+        <div className="data-meta-item data-meta-full">
+          <div className="data-meta-label">Benchmark 测量项目</div>
+          <div className="data-meta-detail">
+            <table className="benchmark-info-table">
+              <thead>
+                <tr>
+                  <th>指标</th>
+                  <th>测试工具</th>
+                  <th>测试项目</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CPU 单核</td>
+                  <td>PassMark PerformanceTest</td>
+                  <td>CPU Single Thread Rating</td>
+                </tr>
+                <tr>
+                  <td>CPU 多核</td>
+                  <td>PassMark PerformanceTest</td>
+                  <td>CPU Mark (Overall)</td>
+                </tr>
+                <tr>
+                  <td>GPU</td>
+                  <td>PassMark PerformanceTest</td>
+                  <td>G3D Mark</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

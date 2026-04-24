@@ -20,6 +20,61 @@ function formatValue(value: number | undefined): string {
   return typeof value === 'number' ? String(value) : '--';
 }
 
+const COMMON_CPU_MODELS = [
+  'Intel Celeron G5900 @ 3.40GHz',
+  'Intel Core i3-2120 @ 3.30GHz',
+  'Intel Core i3-2130 @ 3.40GHz',
+  'Intel Core i5-4590 @ 3.30GHz',
+  'Intel Core i5-7500 @ 3.40GHz',
+  'Intel Core i5-8500 @ 3.00GHz',
+  'Intel Core i7-8700 @ 3.20GHz',
+  'Intel Core i7-10700 @ 2.90GHz',
+  'Intel Core i5-13400',
+  'Intel Core i7-13700',
+] as const;
+
+const COMMON_GPU_MODELS = [
+  'GeForce RTX 5060',
+  'GeForce RTX 3060',
+  'GeForce RTX 2060',
+  'GeForce GTX 1060',
+  'GeForce GTX 760',
+  'GeForce GTX 750 Ti',
+  'GeForce GT 740',
+  'Radeon HD 6450',
+  'Radeon HD 5450',
+  'Intel HD 4600',
+  'Intel UHD 630',
+] as const;
+
+function normalizeModelKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function findByPreferredModel<T extends { model: string }>(items: T[], preferredModel: string): T | undefined {
+  const normalizedPreferred = normalizeModelKey(preferredModel);
+
+  return (
+    items.find((item) => normalizeModelKey(item.model) === normalizedPreferred) ??
+    items.find((item) => normalizeModelKey(item.model).includes(normalizedPreferred))
+  );
+}
+
+function getPreferredSuggestions<T extends { id: string; model: string }>(items: T[], preferredModels: readonly string[]): T[] {
+  const selected: T[] = [];
+  const seen = new Set<string>();
+
+  for (const preferredModel of preferredModels) {
+    const found = findByPreferredModel(items, preferredModel);
+    if (found && !seen.has(found.id)) {
+      selected.push(found);
+      seen.add(found.id);
+    }
+  }
+
+  return selected;
+}
+
 function getBaselineSuggestions<T extends { id: string; model: string; aliases: string[] }>(
   items: T[],
   query: string,
@@ -42,42 +97,6 @@ function getBaselineSuggestions<T extends { id: string; model: string; aliases: 
     seeded.unshift(selected);
   }
   return seeded.slice(0, 10);
-}
-
-function isConsumerCpuModel(model: string): boolean {
-  const text = model.toLowerCase();
-  if (/xeon|epyc|opteron|threadripper\s*pro|itanium|embedded/.test(text)) {
-    return false;
-  }
-  return /core\s+i[3579]|ryzen|athlon|pentium|celeron|apple\s+m|snapdragon|ultra/.test(text);
-}
-
-function isConsumerGpuModel(model: string): boolean {
-  const text = model.toLowerCase();
-  if (/tesla|quadro|firepro|radeon\s+pro|pro\s+wx|workstation/.test(text)) {
-    return false;
-  }
-  return /rtx|gtx|rx\s|radeon\s+rx|arc|uhd|iris|hd\s+graphics|vega/.test(text);
-}
-
-function getCommonCpuSuggestions(cpus: CpuItem[], limit: number): CpuItem[] {
-  const pool = cpus.filter((cpu) => isConsumerCpuModel(cpu.model));
-  const sorted = [...pool].sort((left, right) => {
-    const leftGap = Math.abs(left.cpuMark - 26000);
-    const rightGap = Math.abs(right.cpuMark - 26000);
-    return leftGap - rightGap;
-  });
-  return sorted.slice(0, limit);
-}
-
-function getCommonGpuSuggestions(gpus: GpuItem[], limit: number): GpuItem[] {
-  const pool = gpus.filter((gpu) => isConsumerGpuModel(gpu.model));
-  const sorted = [...pool].sort((left, right) => {
-    const leftGap = Math.abs(left.g3dMark - 12000);
-    const rightGap = Math.abs(right.g3dMark - 12000);
-    return leftGap - rightGap;
-  });
-  return sorted.slice(0, limit);
 }
 
 function BaselinePicker<T extends { id: string; model: string; aliases: string[] }>({
@@ -175,17 +194,17 @@ export function SearchCompareCard({
   const [cpuSingleBaseQuery, setCpuSingleBaseQuery] = useState('');
   const [cpuMultiBaseQuery, setCpuMultiBaseQuery] = useState('');
   const [gpuBaseQuery, setGpuBaseQuery] = useState('');
-  const commonCpuOptions = getCommonCpuSuggestions(cpus, 10);
-  const commonGpuOptions = getCommonGpuSuggestions(gpus, 10);
+  const commonCpuOptions = getPreferredSuggestions(cpus, COMMON_CPU_MODELS);
+  const commonGpuOptions = getPreferredSuggestions(gpus, COMMON_GPU_MODELS);
 
-  const lookupSuggestions =
+  const lookupSuggestions: (CpuItem | GpuItem)[] =
     lookupQuery.trim().length > 0
       ? lookupKind === 'cpu'
         ? searchByKeyword(cpus, lookupQuery)
         : searchByKeyword(gpus, lookupQuery)
       : lookupKind === 'cpu'
-        ? getCommonCpuSuggestions(cpus, 8)
-        : getCommonGpuSuggestions(gpus, 8);
+        ? commonCpuOptions
+        : commonGpuOptions;
 
   const selectedCpu = lookupKind === 'cpu' ? cpus.find((item) => item.id === selectedLookupId) : undefined;
   const selectedGpu = lookupKind === 'gpu' ? gpus.find((item) => item.id === selectedLookupId) : undefined;
@@ -201,6 +220,7 @@ export function SearchCompareCard({
   return (
     <section className="card">
       <div className="card-header">
+        <div className="baseline-callout">可点击右侧“配置基准”确认或修改当前基准</div>
         <button
           type="button"
           className={`action-button action-button-secondary baseline-toggle${showBaseline ? ' baseline-toggle-active' : ''}`}

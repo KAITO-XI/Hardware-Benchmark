@@ -3,6 +3,14 @@ import type { BenchmarkConfig, CpuItem, GpuItem, LadderRow } from '../types/hard
 type OfflineDatasetRaw = {
   cpus: CpuItem[];
   gpus: GpuItem[];
+  meta?: {
+    updatedAt?: string;
+    sources?: Array<{
+      id: string;
+      type: string;
+      url: string;
+    }>;
+  };
   defaults?: {
     cpuSingleBaseId?: string;
     cpuMultiBaseId?: string;
@@ -13,6 +21,14 @@ type OfflineDatasetRaw = {
 export type OfflineDataset = {
   cpus: CpuItem[];
   gpus: GpuItem[];
+  meta: {
+    updatedAt?: string;
+    sources: Array<{
+      id: string;
+      type: string;
+      url: string;
+    }>;
+  };
   cpuSingleLadder: LadderRow[];
   cpuMultiLadder: LadderRow[];
   gpuLadder: LadderRow[];
@@ -111,14 +127,11 @@ export async function loadOfflineDataset(): Promise<OfflineDataset> {
   }
 
   const cpuSingleFallback =
-    findByModelHints(cpus, ['Core i7-8700', 'Ryzen 5 3600', 'Core i5-12400', 'Ryzen 5 5600']) ??
-    pickClosestCpuByScore(cpus, 'singleThreadMark', 2500);
+    findByModelHints(cpus, ['Core i7-10700']) ?? pickClosestCpuByScore(cpus, 'singleThreadMark', 2881);
   const cpuMultiFallback =
-    findByModelHints(cpus, ['Ryzen 5 3600', 'Ryzen 5 5600', 'Core i7-8700', 'Core i5-12400']) ??
-    pickClosestCpuByScore(cpus, 'cpuMark', 18000);
+    findByModelHints(cpus, ['Core i7-10700']) ?? pickClosestCpuByScore(cpus, 'cpuMark', 16015);
   const gpuFallback =
-    findByModelHints(gpus, ['GeForce GTX 1060', 'GeForce RTX 2060', 'Radeon RX 6600']) ??
-    pickClosestGpuByScore(gpus, 10000);
+    findByModelHints(gpus, ['GeForce GTX 1060', 'GTX 1060']) ?? pickClosestGpuByScore(gpus, 10046);
 
   const cpuSingleBaseId = pickValidBaseId(cpus, raw.defaults?.cpuSingleBaseId, cpuSingleFallback.id);
   const cpuMultiBaseId = pickValidBaseId(cpus, raw.defaults?.cpuMultiBaseId, cpuMultiFallback.id);
@@ -131,6 +144,10 @@ export async function loadOfflineDataset(): Promise<OfflineDataset> {
   return {
     cpus,
     gpus,
+    meta: {
+      updatedAt: raw.meta?.updatedAt,
+      sources: raw.meta?.sources ?? [],
+    },
     cpuSingleLadder: buildCpuLadderRows(cpus, 'singleThreadMark', cpuSingleBase),
     cpuMultiLadder: buildCpuLadderRows(cpus, 'cpuMark', cpuMultiBase),
     gpuLadder: buildGpuLadderRows(gpus, gpuBase),

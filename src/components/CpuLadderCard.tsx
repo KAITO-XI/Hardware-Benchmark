@@ -94,10 +94,10 @@ export function CpuLadderCard({
               className={mode === 'benchmark' ? 'is-active' : ''}
               onClick={() => setMode('benchmark')}
             >
-              Benchmark
+              相对基准
             </button>
             <button type="button" className={mode === 'raw' ? 'is-active' : ''} onClick={() => setMode('raw')}>
-              原始分数
+              Benchmark
             </button>
           </div>
         </div>

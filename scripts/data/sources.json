@@ -14,8 +14,8 @@
     }
   ],
   "defaults": {
-    "cpuSingleBaseModelHints": ["Core i7-8700"],
-    "cpuMultiBaseModelHints": ["Ryzen 5 3600"],
-    "gpuBaseModelHints": ["GeForce GTX 1060"]
+    "cpuSingleBaseModelHints": ["Core i7-10700"],
+    "cpuMultiBaseModelHints": ["Core i7-10700"],
+    "gpuBaseModelHints": ["GeForce GTX 1060", "GTX 1060"]
   }
 }
